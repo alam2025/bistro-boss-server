@@ -2,7 +2,7 @@ const express = require('express')
 const app = express()
 const cors = require('cors')
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 
 //midlewaer    
@@ -33,17 +33,63 @@ async function run() {
             // Connect the client to the server	(optional starting in v4.7)
             // await client.connect();
             // Send a ping to confirm a successful connection
-            const menuCollection= client.db('BistroBoss').collection('menu');
-            const reviewsCollection= client.db('BistroBoss').collection('reviews');
-            
+            const menuCollection = client.db('BistroBoss').collection('menu');
+            const reviewsCollection = client.db('BistroBoss').collection('reviews');
+            const cartsCollection = client.db('BistroBoss').collection('carts');
+            const usersCollection = client.db('BistroBoss').collection('users');
 
 
-            app.get('/menu',async(req,res)=>{
-                  const result= await menuCollection.find().toArray();
+
+            //users apis
+            app.post('/users',async(req,res)=>{
+                  const user= req.body;
+                  const query={email:user.email}
+                  const savedUser= await usersCollection.findOne(query);
+                  if(savedUser){
+                        return res.send({message:'User already added.'})
+                  }
+                  const result= await usersCollection.insertOne(user);
                   res.send(result)
             })
-            app.get('/reviews',async(req,res)=>{
-                  const result= await reviewsCollection.find().toArray();
+
+            //menu api
+            app.get('/menu', async (req, res) => {
+                  const result = await menuCollection.find().toArray();
+                  res.send(result)
+            })
+
+            //reviews apis
+            app.get('/reviews', async (req, res) => {
+                  const result = await reviewsCollection.find().toArray();
+                  res.send(result)
+            })
+
+            //carts apis
+            app.post('/carts', async (req, res) => {
+                  const cart = req.body;
+                  const result = await cartsCollection.insertOne(cart);
+                  res.send(result)
+            })
+
+            app.get('/carts', async (req, res) => {
+                  const email = req.query.email;
+                  if (!email) {
+                        res.send([])
+                  }
+                  else {
+                        const query = { email: email };
+                        const result = await cartsCollection.find(query).toArray();
+                        res.send(result);
+                  }
+
+            })
+
+            // delete cart apis 
+
+            app.delete('/carts/:id',async(req,res)=>{
+                  const id= req.params.id;
+                  const query={_id:new ObjectId(id)};
+                  const result = await cartsCollection.deleteOne(query);
                   res.send(result)
             })
 
